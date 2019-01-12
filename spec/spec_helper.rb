@@ -1,5 +1,3 @@
-require 'rubygems'
-
 # Run Coverage report
 require 'simplecov'
 SimpleCov.start do
@@ -18,9 +16,6 @@ ENV['RAILS_ENV'] = 'test'
 require File.expand_path('../dummy/config/environment.rb',  __FILE__)
 
 require 'rspec/rails'
-Capybara.default_driver = :selenium
-Capybara.current_driver = :selenium
-
 require 'database_cleaner'
 require 'ffaker'
 
@@ -35,8 +30,8 @@ require 'spree/testing_support/authorization_helpers'
 require 'spree/testing_support/url_helpers'
 require 'spree/testing_support/capybara_ext'
 
-# Requires factories defined in lib/spree_blog/factories.rb
-require 'spree_blog/factories'
+# Requires factories defined in lib/spree_blogging_spree/factories.rb
+require 'spree_blogging_spree/factories'
 
 RSpec.configure do |config|
   config.include FactoryGirl::Syntax::Methods
@@ -59,27 +54,23 @@ RSpec.configure do |config|
   config.mock_with :rspec
   config.color = true
 
-  config.expect_with :rspec do |c|
-    c.syntax = :expect
-  end
-
   # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
   config.fixture_path = "#{::Rails.root}/spec/fixtures"
 
   # Capybara javascript drivers require transactional fixtures set to false, and we use DatabaseCleaner
   # to cleanup after each test instead.  Without transactional fixtures set to false the records created
-  # to setup a test will be unavailable to the browser, which runs under a seperate server instance.
+  # to setup a test will be unavailable to the browser, which runs under a separate server instance.
   config.use_transactional_fixtures = false
-    # Ensure Suite is set to use transactions for speed.
+
+  # Ensure Suite is set to use transactions for speed.
   config.before :suite do
     DatabaseCleaner.strategy = :transaction
     DatabaseCleaner.clean_with :truncation
   end
 
-
   # Before each spec check if it is a Javascript test and switch between using database transactions or not where necessary.
   config.before :each do
-    DatabaseCleaner.strategy = example.metadata[:js] ? :truncation : :transaction
+    DatabaseCleaner.strategy = RSpec.current_example.metadata[:js] ? :truncation : :transaction
     DatabaseCleaner.start
   end
 
@@ -89,4 +80,11 @@ RSpec.configure do |config|
   end
 
   config.fail_fast = ENV['FAIL_FAST'] || false
+
+  config.include AuthenticationHelpers, :type => :request
+  config.include Capybara::DSL, :type => :request
+
+  config.filter_run :focus => true
+  config.infer_spec_type_from_file_location!
+  config.run_all_when_everything_filtered = true
 end
